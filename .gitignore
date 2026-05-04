@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.csv
+*.xlsx
+*.tsv
+data/raw/
+.DS_Store
+*.egg-info/
+.env
+.venv/
+venv/
+*.ipynb_checkpoints/
+.idea/
+.vscode/
