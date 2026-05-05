@@ -1,112 +1,191 @@
 """
 02_preprocess.py
 ----------------
-1. Load the ARG abundance table from data/raw/
-2. Assign Koppen-Geiger climate zone to each sample using lat/lon
-3. Simplify zones into three groups: Tropical (A), Arid (B), Temperate (C/D)
-4. Save per-zone filtered tables to data/processed/
+1. Load the wide ARG table from data/processed/arg_wide_with_meta.csv
+2. Assign Koppen-Geiger climate zones using two methods:
+   a. Primary: rasterio point query if the GeoTIFF is available
+   b. Fallback: continent-based approximate assignment (no raster needed)
+3. Filter out ARGs that are too sparse (< MIN_PRESENCE_FRAC of samples)
+4. Save per-zone filtered tables to data/processed/args_<zone>.csv
 
-Requirements:
-    pip install rasterio rasterstats
-
-Koppen-Geiger raster:
-    Download "Beck_KG_V1_present_0p0083.tif" from:
-    https://figshare.com/articles/dataset/Present_and_future_K_ppen-Geiger_climate_classification_maps_at_1-km_resolution/6396959
-    Save to: data/raw/koppen_geiger.tif
+Raster (optional but more accurate):
+    Download Beck 2018 from: https://figshare.com/articles/dataset/21789074
+    Save as: data/raw/koppen_geiger_1991_2020_0p1.tif
 """
 
 import pandas as pd
 import numpy as np
-import rasterio
-from rasterio.transform import rowcol
 import os
 
 # ── Configuration ────────────────────────────────────────────────────────────
-RAW_DIR = "data/raw/"
-PROCESSED_DIR = "data/processed/"
-KOPPEN_RASTER = os.path.join(RAW_DIR, "koppen_geiger.tif")
+PROCESSED_DIR  = "data/processed/"
+RAW_DIR        = "data/raw/"
+IN_FILE        = os.path.join(PROCESSED_DIR, "arg_wide_with_meta.csv")
+KOPPEN_RASTER  = os.path.join(RAW_DIR, "koppen_geiger_tif", "1991_2020", "koppen_geiger_0p1.tif")
 
-# Update to your actual filename
-ARG_TABLE_FILE = os.path.join(RAW_DIR, "arg_abundance.csv")
+META_COLS = ["run_accession", "lat", "lon", "continent", "country",
+             "koppen_code", "climate_zone"]
 
-LAT_COL = "Latitude"
-LON_COL = "Longitude"
-
-ZONE_MAP = {
-    "A": "Tropical",
-    "B": "Arid",
-    "C": "Temperate",
-    "D": "Temperate",
-}
+# Minimum fraction of samples an ARG must appear in (non-zero)
+MIN_PRESENCE_FRAC = 0.05   # 5% → at least 1 in 20 samples
 
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 
 
-def get_koppen_code(lat: float, lon: float, src: rasterio.DatasetReader) -> str:
-    """Query raster to get the Koppen-Geiger zone code integer, map to letter."""
-    # Beck 2018 encodes zones as integers (1=Af, 2=Am, 3=As, 4=Aw, 5=BWh, ...)
-    row, col = rowcol(src.transform, lon, lat)
-    try:
-        value = src.read(1)[row, col]
-    except IndexError:
-        return "Unknown"
+# ── Zone assignment ───────────────────────────────────────────────────────────
 
-    # Integer → letter mapping (simplified — first letter only)
-    zone_codes = {
-        range(1, 5): "A",    # Tropical
-        range(5, 9): "B",    # Arid
-        range(9, 17): "C",   # Temperate (warm)
-        range(17, 29): "D",  # Continental
-        range(29, 31): "E",  # Polar
-    }
-    for code_range, letter in zone_codes.items():
-        if value in code_range:
-            return letter
-    return "Unknown"
+def assign_zone_from_raster(df: pd.DataFrame) -> pd.DataFrame:
+    """Use the Beck 2018 GeoTIFF raster for precise per-coordinate assignment."""
+    import rasterio
+    from rasterio.transform import rowcol
 
+    def code_to_letter(value):
+        if value is None or value == 0:
+            return None
+        if 1  <= value <= 3:  return "A"   # Tropical
+        if 4  <= value <= 7:  return "B"   # Arid
+        if 8  <= value <= 16: return "C"   # Temperate
+        if 17 <= value <= 28: return "D"   # Continental
+        if 29 <= value <= 30: return "E"   # Polar
+        return None
 
-def assign_zones(df: pd.DataFrame) -> pd.DataFrame:
-    """Add KG_code and Climate_Zone columns to the dataframe."""
-    if not os.path.exists(KOPPEN_RASTER):
-        raise FileNotFoundError(
-            f"Koppen-Geiger raster not found at {KOPPEN_RASTER}.\n"
-            "Download Beck 2018 raster from Figshare and save as data/raw/koppen_geiger.tif"
-        )
+    def letter_to_zone(letter):
+        return {"A": "tropical", "B": "arid",
+                "C": "temperate", "D": "temperate"}.get(letter, None)
 
+    print("  Using Koppen-Geiger raster for zone assignment...")
     with rasterio.open(KOPPEN_RASTER) as src:
-        df["KG_code"] = df.apply(
-            lambda row: get_koppen_code(row[LAT_COL], row[LON_COL], src), axis=1
-        )
+        def query(lat, lon):
+            if pd.isna(lat) or pd.isna(lon):
+                return None, None
+            try:
+                row, col = src.index(lon, lat)
+                value = int(src.read(1)[row, col])
+                letter = code_to_letter(value)
+                return value, letter
+            except Exception:
+                return None, None
 
-    df["Climate_Zone"] = df["KG_code"].map(ZONE_MAP).fillna("Other")
+        results = df.apply(lambda r: query(r["lat"], r["lon"]), axis=1)
+
+    df["koppen_code"] = results.apply(lambda x: x[0])
+    df["kg_letter"]   = results.apply(lambda x: x[1])
+    df["climate_zone"] = df["kg_letter"].apply(letter_to_zone)
     return df
 
 
-def split_by_zone(df: pd.DataFrame) -> dict:
-    """Return a dict of {zone_name: DataFrame} for each climate zone."""
-    zones = {}
-    for zone in ["Tropical", "Arid", "Temperate"]:
-        subset = df[df["Climate_Zone"] == zone].copy()
-        print(f"  {zone}: {len(subset)} samples")
-        zones[zone] = subset
-    return zones
+# Country → approximate climate zone lookup (fallback)
+COUNTRY_ZONE = {
+    # Tropical
+    "Brazil": "tropical", "Colombia": "tropical", "Peru": "tropical",
+    "Venezuela": "tropical", "Ecuador": "tropical", "Bolivia": "tropical",
+    "Indonesia": "tropical", "Malaysia": "tropical", "Thailand": "tropical",
+    "Philippines": "tropical", "Vietnam": "tropical", "Cambodia": "tropical",
+    "Laos": "tropical", "Myanmar": "tropical", "Papua New Guinea": "tropical",
+    "India": "tropical", "Bangladesh": "tropical", "Sri Lanka": "tropical",
+    "Nigeria": "tropical", "Ghana": "tropical", "Cameroon": "tropical",
+    "Democratic Republic of the Congo": "tropical", "Uganda": "tropical",
+    "Kenya": "tropical", "Tanzania": "tropical", "Ethiopia": "tropical",
+    "Madagascar": "tropical", "Panama": "tropical", "Costa Rica": "tropical",
+    "Guatemala": "tropical", "Honduras": "tropical", "Nicaragua": "tropical",
+    "Singapore": "tropical",
+    # Arid
+    "Australia": "arid", "Namibia": "arid", "Botswana": "arid",
+    "Saudi Arabia": "arid", "Iran": "arid", "Iraq": "arid",
+    "Egypt": "arid", "Libya": "arid", "Algeria": "arid",
+    "Morocco": "arid", "Sudan": "arid", "Mongolia": "arid",
+    "Chile": "arid", "Argentina": "arid", "Pakistan": "arid",
+    "Afghanistan": "arid", "Kazakhstan": "arid", "Uzbekistan": "arid",
+    # Temperate / Continental
+    "United States": "temperate", "Canada": "temperate",
+    "United Kingdom": "temperate", "Germany": "temperate",
+    "France": "temperate", "Spain": "temperate", "Italy": "temperate",
+    "Netherlands": "temperate", "Sweden": "temperate", "Norway": "temperate",
+    "Denmark": "temperate", "Finland": "temperate", "Switzerland": "temperate",
+    "Austria": "temperate", "Belgium": "temperate", "Poland": "temperate",
+    "Czech Republic": "temperate", "Hungary": "temperate",
+    "Romania": "temperate", "Ukraine": "temperate", "Russia": "temperate",
+    "Japan": "temperate", "South Korea": "temperate", "China": "temperate",
+    "New Zealand": "temperate", "South Africa": "temperate",
+    "Turkey": "temperate", "Greece": "temperate", "Portugal": "temperate",
+    "Mexico": "temperate",
+}
 
+CONTINENT_ZONE = {
+    "Africa":       "tropical",
+    "South America":"tropical",
+    "Asia":         "temperate",   # broad approximation
+    "Europe":       "temperate",
+    "North America":"temperate",
+    "Oceania":      "arid",
+}
+
+
+def assign_zone_fallback(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Assign climate zone using country lookup first, then continent fallback.
+    Less precise than raster but requires no external files.
+    """
+    print("  No raster found — using country/continent fallback zones.")
+
+    def zone_for_row(row):
+        if isinstance(row["country"], str) and row["country"] in COUNTRY_ZONE:
+            return COUNTRY_ZONE[row["country"]]
+        if isinstance(row["continent"], str) and row["continent"] in CONTINENT_ZONE:
+            return CONTINENT_ZONE[row["continent"]]
+        return None
+
+    df["koppen_code"]  = None
+    df["climate_zone"] = df.apply(zone_for_row, axis=1)
+    return df
+
+
+# ── Main pipeline ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("Loading ARG table...")
-    df = pd.read_csv(ARG_TABLE_FILE, index_col=0)
+    print(f"Loading {IN_FILE}...")
+    df = pd.read_csv(IN_FILE, low_memory=False)
+    print(f"  Shape: {df.shape[0]:,} samples × {df.shape[1]:,} columns")
 
-    print("Assigning Koppen-Geiger zones...")
-    df = assign_zones(df)
+    # Identify ARG columns (everything that isn't metadata)
+    existing_meta = [c for c in META_COLS if c in df.columns]
+    arg_cols = [c for c in df.columns if c not in existing_meta]
+    print(f"  ARG columns: {len(arg_cols):,}")
 
-    print("\nSample counts by zone:")
-    zones = split_by_zone(df)
+    # ── Assign climate zones ──────────────────────────────────────────────────
+    print("\nAssigning climate zones...")
+    if os.path.exists(KOPPEN_RASTER):
+        df = assign_zone_from_raster(df)
+    else:
+        df = assign_zone_fallback(df)
 
-    for zone_name, zone_df in zones.items():
-        out_path = os.path.join(PROCESSED_DIR, f"args_{zone_name.lower()}.csv")
-        zone_df.to_csv(out_path)
-        print(f"  Saved: {out_path}")
+    zone_counts = df["climate_zone"].value_counts()
+    print("\nSamples per zone:")
+    print(zone_counts.to_string())
 
-    # Also save the full labeled table
-    df.to_csv(os.path.join(PROCESSED_DIR, "args_all_zones.csv"))
-    print("\nDone. Check data/processed/ for output files.")
+    # Drop samples with no zone
+    df = df.dropna(subset=["climate_zone"])
+    print(f"\nSamples retained after zone assignment: {len(df):,}")
+
+    # ── Filter sparse ARGs ────────────────────────────────────────────────────
+    print(f"\nFiltering ARGs present in <{MIN_PRESENCE_FRAC*100:.0f}% of samples...")
+    presence = (df[arg_cols] > 0).sum() / len(df)
+    arg_cols_kept = presence[presence >= MIN_PRESENCE_FRAC].index.tolist()
+    print(f"  ARGs before filter: {len(arg_cols):,}")
+    print(f"  ARGs after  filter: {len(arg_cols_kept):,}")
+
+    # ── Save per-zone tables ──────────────────────────────────────────────────
+    print("\nSaving per-zone tables...")
+    for zone in ["tropical", "arid", "temperate"]:
+        subset = df[df["climate_zone"] == zone][arg_cols_kept].copy()
+        out_path = os.path.join(PROCESSED_DIR, f"args_{zone}.csv")
+        subset.to_csv(out_path, index=False)
+        print(f"  {zone:10s}: {len(subset):>5} samples, {len(arg_cols_kept):>4} ARGs -> {out_path}")
+
+    # Save the full merged table too
+    full_out = os.path.join(PROCESSED_DIR, "args_all_zones.csv")
+    df[["run_accession", "lat", "lon", "continent", "country", "climate_zone"] + arg_cols_kept].to_csv(
+        full_out, index=False
+    )
+    print(f"\nFull labeled table saved to: {full_out}")
+    print("\nNext step: run 03_build_network.py")

@@ -1,0 +1,141 @@
+Progress Report
+ CMSC 191 NS | Sub-Project: Pitch 1
+Project (Sub-project) Name: ARG Co-occurrence Network Under Climate Gradients: A Gene-Level
+ Network Topology Study
+Project Members: James Angelo R. Dela Cruz, Angeleen Claire M. Lominoque, Hazelle N. Millarpis
+Project Description:
+A network science study investigating whether Antibiotic Resistance Genes (ARGs) found co-occurring in
+ environmental metagenomic samples form structurally distinct network communities depending on climate
+ zone.
+Using preprocessed ARG abundance tables sourced from published metagenomic studies on
+ Figshare, Zenodo, or NCBI-linked supplementary data, and mapped against Koppen-Geiger climate
+ classifications, the project constructs weighted ARG co-occurrence networks and applies community
+ detection algorithms to test whether climate zone is a statistically significant predictor of ARG network
+ topology.
+Project Goals:
+1. Source and compile preprocessed ARG abundance tables from published studies with known sample
+ geographic coordinates.
+2. Assign climate zone labels (tropical, temperate, arid) to each sample using Koppen-Geiger
+ classification.
+3. Construct weighted ARG co-occurrence networks per climate zone and compute baseline topology
+ metrics including degree, modularity, and betweenness centrality.
+4. Apply community detection algorithms (Louvain, Girvan-Newman) and compare ARG community
+ structures across climate zones to evaluate climate zone as a structural predictor.
+
+1. Overall Status
+Current Stage: Phase 2 - transitioning from project initiation into active dataset sourcing and preprocessing.
+The research pitch has been completed and the analytical pipeline is being set up.
+The team is now positioned to begin active dataset evaluation and the initial network construction environment is being prepared.
+The project is on track given the coming week.
+
+2. Key Accomplishments
+- Research Formulation: Finalized a focused, computationally feasible research problem connecting
+ climate gradients to ARG co-occurrence network topology, grounded in the gene co-occurrence network
+ framework discussed in course materials (Solano, 2026; Zambrano et al., Annual Review of Genetics).
+Methodology Scoping: Scoped the methodology to use preprocessed ARG abundance tables from
+ existing published studies rather than raw metagenomic sequencing files, making the study realistically
+ completable within the project timeline.
+- Dataset Identification: Located candidate open-access preprocessed datasets on Figshare, Zenodo,
+ and NCBI supplementary materials, alongside Koppen-Geiger Climate Maps for zone assignment.
+- Network Pipeline Planning: Confirmed the full analytical pipeline: co-occurrence matrix construction
+ from ARG abundance tables, weighted graph construction per climate zone, community detection
+ (Louvain as primary, Girvan-Newman as comparison), and topology metric computation (degree,
+ betweenness centrality, modularity, clustering coefficient).
+- Toolchain Confirmed: Python with NetworkX selected for graph construction and metric computation.
+ igraph retained as a backup alternative.
+- Proposal Drafting: Completed a research covering the problem statement, objectives, methodology,
+ dataset plan, and division of labor.
+Writing responsibilities assigned to teammates to allow the technical lead to focus on the analytical pipeline.
+
+3. Next Steps (for the coming week of reporting)
+James Angelo R. Dela Cruz:
+- Download and evaluate 1 to 2 suitable preprocessed ARG abundance tables from Figshare, Zenodo, or
+ NCBI supplementary materials.
+Begin data cleaning: filter low-frequency ARGs and assign Koppen-Geiger climate zone labels to each
+ sample based on geographic coordinates.
+Construct initial co-occurrence matrices and build the first draft ARG network graphs per climate zone.
+- Run preliminary topology metric computation (degree distribution, clustering coefficient) to assess
+ network viability before running full community detection.
+Share preliminary dataset findings and network outputs with teammates so they can begin
+ contextualizing the methodology in the paper.
+
+Angeleen Claire M. Lominoque:
+- Search Figshare, Zenodo, and NCBI supplementary materials for preprocessed ARG abundance tables
+ with geographic metadata; shortlist 2 to 3 candidates for James to assess.
+- Begin drafting the Background and Problem Statement sections of the paper, covering the AMR-climate
+ nexus and the justification for a network science approach.
+
+Hazelle N. Millarpis:
+Conduct literature review on ARG co-occurrence networks and climate-AMR interactions.
+Begin drafting the Introduction and RRL sections covering AMR global burden, ARG co-occurrence
+ evidence, and climate-driven shifts in microbial communities.
+
+4. Issues
+- Dataset Availability: Not all published metagenomic studies deposit clean ARG abundance tables
+ alongside their papers. Finding a dataset that is both preprocessed and geographically tagged requires
+ evaluating multiple candidates, which takes time.
+Geographic Metadata: Some datasets report sample locations at the country level rather than exact
+ coordinates, which complicates direct Koppen-Geiger zone assignment and may require manual
+ classification.
+
+5. Risks
+- Insufficient Climate Zone Coverage: Available preprocessed datasets may not have sufficient sample
+ coverage across all three target climate zones. If arid zone representation is too sparse, the comparison
+ may need to be narrowed to two zones (tropical and temperate).
+Mitigation: assess zone distribution before committing to the full three-zone design.
+Sparse Networks Per Zone: If co-occurrence networks turn out to be too sparse per climate zone,
+ community detection algorithms may not produce meaningful results.
+Mitigation: apply a minimum sample threshold per zone before running full analysis.
+- Timeline Compression: The 3-week timeline leaves little room for unexpected delays in the data
+ preparation phase. If dataset sourcing extends beyond the first week, the depth of analysis may need to
+ be reduced to a single community detection algorithm.
+Mitigation: prioritize getting one clean, working network over building all three zones simultaneously.
+- Writing-Analysis Coordination: There is a risk that the written Methods and Results sections will need
+ revision once actual network outputs are generated.
+Mitigation: teammates will write the Introduction, RRL, and Background sections first, which do not depend on results, and will hold Methods and Results until after preprocessing is complete.
+
+6. Timetable
+- Phase 1 (Project Initiation): Research pitch finalization, proposal drafting, and initial status report submission.
+- Phase 2 (Dataset Sourcing and Preparation): Identifying and downloading preprocessed ARG abundance tables; data cleaning and Koppen-Geiger climate zone labeling per sample. Simultaneously, teammates begin writing Introduction, RRL, and Background sections.
+- Phase 3 (Network Construction): Building ARG co-occurrence matrices and constructing weighted networks per climate zone; computing baseline topology metrics.
+- Phase 4 (Core Network Analysis): Applying community detection (Louvain), computing centrality metrics, and performing cross-zone structural comparison.
+- Phase 5 (Synthesis and Final Output): Network visualization, interpretation of findings against AMR-climate literature, integration with paper sections, and final polish.
+
+7. Remaining Tasks
+For the whole project:
+James Angelo R. Dela Cruz:
+- Build and maintain the full Python pipeline covering co-occurrence matrix construction, graph building, community detection, and metric computation.
+- Evaluate candidate datasets for suitability and lead all data preprocessing decisions.
+- Produce all network visualizations and handle statistical comparison across climate zones.
+- Review and validate the methodology and results sections of the final paper written by teammates.
+- Co-write the Conclusion with all three team members.
+
+Angeleen Claire M. Lominoque:
+- Source and download preprocessed ARG abundance tables from Figshare, Zenodo, and NCBI supplementary materials.
+- Handle data cleaning, ARG filtering, and Koppen-Geiger climate zone assignment per sample.
+- Draft Background and Problem Statement sections of the paper.
+- Co-write the Conclusion with all three team members.
+
+Hazelle N. Millarpis:
+- Conduct and maintain the literature review on ARG co-occurrence networks and climate-AMR relationships.
+- Draft Introduction and RRL sections of the paper.
+- Provide AMR domain interpretation of network findings for the Discussion section.
+- Handle documentation and final report writing and formatting.
+- Co-write the Conclusion with all three team members.
+
+For the coming week:
+James Angelo R. Dela Cruz:
+- Set up Python environment (NetworkX/igraph) and review co-occurrence network construction approaches.
+- Download and assess 1 to 2 preprocessed ARG abundance tables from Figshare, Zenodo, or NCBI supplementary materials.
+- Begin data cleaning, ARG filtering, and Koppen-Geiger zone labeling in Python.
+- Construct initial co-occurrence matrices and build the first draft network graphs per climate zone.
+
+Angeleen Claire M. Lominoque:
+- Search Figshare, Zenodo, and NCBI supplementary materials for preprocessed ARG abundance tables with geographic metadata.
+- Shortlist 2 to 3 candidate datasets for James to evaluate for suitability.
+- Begin drafting Background and Problem Statement sections.
+
+Hazelle N. Millarpis:
+- Conduct literature review on ARG co-occurrence networks and climate-AMR interactions.
+- Begin drafting Introduction and RRL sections.
+- Assist in finalizing and submitting the research proposal.
