@@ -13,3 +13,16 @@ venv/
 *.ipynb_checkpoints/
 .idea/
 .vscode/
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.out
+*.toc
+*.bbl
+*.blg
+*.lof
+*.lot

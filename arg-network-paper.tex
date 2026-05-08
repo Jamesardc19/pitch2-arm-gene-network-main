@@ -5,56 +5,49 @@
 %% Overleaf setup (copy-paste ready):
 %%   1. Paste this entire file into main.tex
 %%   2. Upload arg-bibliography.bib to the project root
-%%   3. Upload sn-jnl.cls (and companion .sty/.bst files) to the project root
-%%   4. Create a folder named "figures" and upload:
+%%   3. Create a folder named "figures" and upload:
 %%        network_tropical.png, network_arid.png,
 %%        network_temperate.png, centrality_by_zone.png
 
-\documentclass[pdflatex]{sn-jnl}% Springer Nature Journal template
+\documentclass[12pt,a4paper]{article}
 
+\usepackage[margin=2.5cm]{geometry}%
+\usepackage{authblk}%
 \usepackage{graphicx}%
 \usepackage{multirow}%
 \usepackage{amsmath,amssymb,amsfonts}%
 \usepackage{amsthm}%
-\usepackage{mathrsfs}%
-\usepackage[title]{appendix}%
-\usepackage{xcolor}%
-\usepackage{textcomp}%
-\usepackage{manyfoot}%
 \usepackage{booktabs}%
-\usepackage{algorithm}%
-\usepackage{algorithmicx}%
-\usepackage{algpseudocode}%
-\usepackage{listings}%
-\usepackage[numbers,sort&compress]{natbib}% numbered citations
+\usepackage{xcolor}%
+\usepackage{hyperref}%
+\usepackage[numbers,sort&compress]{natbib}%
+\usepackage{setspace}%
+\onehalfspacing%
+\usepackage{parskip}%
 
-\raggedbottom
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\renewcommand\Affilfont{\small}
+
 \begin{document}
 
-\title[ARG Network Topology Under Climate Gradients]{%
-  Antibiotic Resistance Gene Co-occurrence Network Topology\\%
-  Under Climate Gradients: A Gene-Level Network Analysis}
+\title{\textbf{Antibiotic Resistance Gene Co-occurrence Network Topology\\
+Under Climate Gradients: A Gene-Level Network Analysis}}
 
-\author*[1]{\fnm{James Angelo R.} \sur{Dela Cruz}}\email{jrdelacruz5@up.edu.ph}
+\author[1]{James Angelo R. Dela Cruz}
+\author[1]{Angeleen Claire M. Lominoque}
+\author[1]{Hazelle N. Millarpis}
+\affil[1]{Department of Physical Sciences and Mathematics,
+  University of the Philippines Manila,
+  670 Padre Faura St, Manila 1000, Philippines}
+\affil[ ]{\textit{Corresponding author:} \href{mailto:jrdelacruz5@up.edu.ph}{jrdelacruz5@up.edu.ph}}
 
-\author[1]{\fnm{Angeleen Claire M.} \sur{Lominoque}}\email{amlominoque@up.edu.ph}
-
-\author[1]{\fnm{Hazelle N.} \sur{Millarpis}}\email{hnmillarpis@up.edu.ph}
-
-\affil*[1]{\orgdiv{Department of Computer Science},
-  \orgname{University of the Philippines Visayas},
-  \orgaddress{\city{Miagao}, \state{Iloilo}, \country{Philippines}}}
-
-\keywords{Antibiotic Resistance Genes, Co-occurrence Network,
-K\"oppen-Geiger Climate Classification, Community Detection,
-Louvain Algorithm, Betweenness Centrality, Network Topology,
-Environmental Metagenomics}
-
+\date{}
 \maketitle
 
 %% ─── Abstract ─────────────────────────────────────────────────────────────────
 
-\abstract{%
+\begin{abstract}
 Antibiotic resistance genes (ARGs) in environmental metagenomes do not
 accumulate in isolation; they are co-selected, co-transferred, and
 co-regulated in ways that produce structured co-occurrence patterns.
@@ -77,7 +70,12 @@ yielded $H = 3.22$, $p = 0.20$ (not significant), suggesting that
 while the \emph{identity} of hub ARGs differs by zone, the overall
 structural centrality distribution is conserved.
 These findings provide a network-level perspective on how climate context
-may shape the ecology of antibiotic resistance.}
+may shape the ecology of antibiotic resistance.
+\end{abstract}
+
+\noindent\textbf{Keywords:} Antibiotic Resistance Genes, Co-occurrence Network,
+K\"oppen-Geiger Climate Classification, Community Detection,
+Louvain Algorithm, Betweenness Centrality, Network Topology, Environmental Metagenomics
 
 %% ─── 1. Introduction ──────────────────────────────────────────────────────────
 
@@ -304,19 +302,31 @@ Network visualisations are shown in Figure~\ref{fig:networks}.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/network_tropical}
-  \includegraphics[width=\linewidth]{figures/network_arid}
-  \includegraphics[width=\linewidth]{figures/network_temperate}
-  \caption{ARG co-occurrence networks for the three climate zones.
-    Nodes are coloured by Louvain community and sized by betweenness
-    centrality.
-    Labels are shown only for the top-12 hub ARGs by betweenness.
-    Edge width is proportional to Spearman $r$.
-    \textbf{Top:} Tropical zone (1,730 edges, $Q = 0.41$).
-    \textbf{Middle:} Arid zone (2,292 edges, $Q = 0.26$).
-    \textbf{Bottom:} Temperate zone (1,960 edges, $Q = 0.31$).}
+  \includegraphics[width=0.92\linewidth]{network_tropical.png}
+  \caption{(a) \textbf{Tropical Climate Zone} --- 1,730 edges, $Q = 0.41$,
+    Louvain communities: 27.
+    Nodes are coloured by community and sized by betweenness centrality;
+    labels shown for the top-12 hub ARGs by betweenness.
+    Edge width is proportional to Spearman $r$.}
+  \label{fig:network_tropical}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{network_arid.png}
+  \caption{(b) \textbf{Arid Climate Zone} --- 2,292 edges, $Q = 0.26$,
+    Louvain communities: 20.}
+  \label{fig:network_arid}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{network_temperate.png}
+  \caption{(c) \textbf{Temperate Climate Zone} --- 1,960 edges, $Q = 0.31$,
+    Louvain communities: 24.}
   \label{fig:networks}
 \end{figure}
+
 
 \subsection{Community Detection}\label{sec:res-community}
 
@@ -515,8 +525,6 @@ more geographically balanced sampling.
 
 %% ─── Back matter ──────────────────────────────────────────────────────────────
 
-\backmatter
-
 \section*{Data and Code Availability}
 
 The mARG dataset used in this study is publicly available at Zenodo
@@ -539,6 +547,7 @@ All authors contributed to the Conclusion.
 
 %% ─── Bibliography ─────────────────────────────────────────────────────────────
 
+\newpage
 \bibliographystyle{unsrt}%
 \bibliography{arg-bibliography}%
 
