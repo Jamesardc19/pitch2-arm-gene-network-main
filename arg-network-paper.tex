@@ -1,0 +1,545 @@
+%% ARG Co-occurrence Network Under Climate Gradients: A Gene-Level Network Topology Study
+%% Authors: James Angelo R. Dela Cruz, Angeleen Claire M. Lominoque, Hazelle N. Millarpis
+%% Course: CMSC 191 NS -- Network Science
+%%
+%% Overleaf setup (copy-paste ready):
+%%   1. Paste this entire file into main.tex
+%%   2. Upload arg-bibliography.bib to the project root
+%%   3. Upload sn-jnl.cls (and companion .sty/.bst files) to the project root
+%%   4. Create a folder named "figures" and upload:
+%%        network_tropical.png, network_arid.png,
+%%        network_temperate.png, centrality_by_zone.png
+
+\documentclass[pdflatex]{sn-jnl}% Springer Nature Journal template
+
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+\usepackage[numbers,sort&compress]{natbib}% numbered citations
+
+\raggedbottom
+\begin{document}
+
+\title[ARG Network Topology Under Climate Gradients]{%
+  Antibiotic Resistance Gene Co-occurrence Network Topology\\%
+  Under Climate Gradients: A Gene-Level Network Analysis}
+
+\author*[1]{\fnm{James Angelo R.} \sur{Dela Cruz}}\email{jrdelacruz5@up.edu.ph}
+
+\author[1]{\fnm{Angeleen Claire M.} \sur{Lominoque}}\email{amlominoque@up.edu.ph}
+
+\author[1]{\fnm{Hazelle N.} \sur{Millarpis}}\email{hnmillarpis@up.edu.ph}
+
+\affil*[1]{\orgdiv{Department of Computer Science},
+  \orgname{University of the Philippines Visayas},
+  \orgaddress{\city{Miagao}, \state{Iloilo}, \country{Philippines}}}
+
+\keywords{Antibiotic Resistance Genes, Co-occurrence Network,
+K\"oppen-Geiger Climate Classification, Community Detection,
+Louvain Algorithm, Betweenness Centrality, Network Topology,
+Environmental Metagenomics}
+
+\maketitle
+
+%% ─── Abstract ─────────────────────────────────────────────────────────────────
+
+\abstract{%
+Antibiotic resistance genes (ARGs) in environmental metagenomes do not
+accumulate in isolation; they are co-selected, co-transferred, and
+co-regulated in ways that produce structured co-occurrence patterns.
+Whether these patterns vary systematically with climate zone remains
+largely unexplored.
+This study constructs weighted ARG co-occurrence networks for three
+major climate zones---tropical, arid, and temperate---using the
+mARG dataset (Martiny \emph{et~al.}) comprising 119,232 metagenomic
+samples, with climate zone assigned via the Beck \emph{et~al.}\ (2023)
+K\"oppen-Geiger raster at $0.1^\circ$ resolution.
+Pairwise Spearman correlations between 156 ARGs passing a 5\% presence
+filter were used to define edges ($r \geq 0.3$, $p < 0.05$).
+Louvain community detection revealed modularity scores of
+$Q = 0.41$ (tropical), $Q = 0.26$ (arid), and $Q = 0.31$ (temperate),
+indicating zone-specific variation in network compartmentalisation.
+Hub ARGs identified by betweenness centrality differed across zones,
+with \texttt{tet(M)} recurring in both tropical and arid networks.
+A Kruskal-Wallis test on betweenness distributions across zones
+yielded $H = 3.22$, $p = 0.20$ (not significant), suggesting that
+while the \emph{identity} of hub ARGs differs by zone, the overall
+structural centrality distribution is conserved.
+These findings provide a network-level perspective on how climate context
+may shape the ecology of antibiotic resistance.}
+
+%% ─── 1. Introduction ──────────────────────────────────────────────────────────
+
+\section{Introduction}\label{intro}
+
+The global rise of antibiotic resistance constitutes one of the most
+urgent public-health challenges of the twenty-first century.
+Antibiotic resistance genes (ARGs) are the molecular currency of this
+crisis: they encode biochemical mechanisms---enzymatic inactivation,
+efflux pumps, target modification---that render antibiotics
+ineffective~\cite{WHO2023}.
+Environmental metagenomics has demonstrated that ARGs are pervasive
+across soils, sediments, and waterways, raising concern about the
+``resistome'' as a reservoir from which clinically relevant resistance
+elements may emerge~\cite{Allen2010}.
+
+ARGs are rarely found in isolation.
+They are frequently co-localised on mobile genetic elements such as
+plasmids and integrons, creating co-selection pressure that drives
+their co-occurrence in metagenomic samples~\cite{Partridge2018}.
+Network science offers a natural framework for studying these
+co-occurrence patterns.
+By treating ARGs as nodes and statistically significant co-occurrences
+as edges, one can characterise the global structure of resistance gene
+ecology---identifying hub genes that link distinct resistance clusters,
+and detecting communities of genes that tend to co-occur together.
+
+Climate zone is a plausible predictor of ARG community structure.
+Temperature and precipitation shape microbial community composition,
+horizontal gene transfer rates, and the selective pressure from
+antibiotic use in agriculture~\cite{vanBoeckel2014, Cavicchioli2019}.
+Yet to our knowledge, no study has directly compared ARG co-occurrence
+\emph{network topology} across climate zones using a large,
+geographically diverse metagenomic dataset.
+
+This study addresses that gap.
+Using the mARG dataset---the largest unified ARG abundance table
+compiled from published environmental metagenomic studies---we
+assign climate zone labels via the high-resolution
+K{\"o}ppen-Geiger raster of Beck \emph{et~al.}\ (2023), construct
+weighted co-occurrence networks for tropical, arid, and temperate
+zones, and compare their topology through community detection and
+centrality analysis.
+
+%% ─── 2. Methods ───────────────────────────────────────────────────────────────
+
+\section{Methods}\label{methods}
+
+\subsection{Dataset}\label{sec:data}
+
+We used the mARG dataset published by Martiny \emph{et~al.}\ (Zenodo
+accession 6919377), which aggregates ARG abundance tables from 119,232
+environmental metagenomic samples.
+The dataset provides, for each sample-ARG pair, the fragment count
+aligned to a reference ARG sequence (\texttt{fragmentCountAln}),
+the reference sequence length, and the total number of trimmed reads
+(\texttt{trimmed\_fragments}).
+Geographic coordinates were parsed from the accompanying
+\texttt{metadata.tsv} file, which records sample location in
+degree-minute format (e.g.\ ``18.05 S 47.03 E'').
+
+Abundance was normalised to Reads Per Kilobase per Million mapped reads
+(RPKM):
+\begin{equation}
+  \text{RPKM}_{ij} =
+    \frac{\text{fragmentCountAln}_{ij} \times 10^{6}}
+         {\left(\text{refLength}_{j} / 1000\right)
+          \times \text{trimmedFragments}_{i}}
+  \label{eq:rpkm}
+\end{equation}
+where $i$ indexes samples and $j$ indexes ARG sequences.
+This normalisation accounts for both gene length bias and variation in
+sequencing depth.
+The resulting wide-format matrix has dimensions
+$119{,}232 \text{ samples} \times 2{,}999 \text{ ARGs}$.
+
+\subsection{Climate Zone Assignment}\label{sec:zones}
+
+Each sample was assigned to a major climate class using the
+Beck \emph{et~al.}\ (2023) K{\"o}ppen-Geiger raster at
+$0.1^\circ$ spatial resolution (Figshare dataset 21789074).
+The raster encodes 30 climate types as integer codes; we mapped
+these to three analytical zones:
+\begin{itemize}
+  \item \textbf{Tropical} (codes 1--3, class A)
+  \item \textbf{Arid} (codes 4--7, class B)
+  \item \textbf{Temperate} (codes 8--28, classes C and D merged)
+  \item Polar (codes 29--30, class E) --- excluded
+\end{itemize}
+Point queries were performed in Python using \texttt{rasterio}.
+Samples with coordinates outside the raster extent or returning a
+no-data value were discarded.
+This yielded 52,064 samples across the three zones
+(Table~\ref{tab:zones}).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Sample counts per climate zone after K{\"o}ppen-Geiger
+           assignment.}
+  \label{tab:zones}
+  \begin{tabular}{lcc}
+    \toprule
+    Climate Zone & Samples & Fraction (\%) \\
+    \midrule
+    Temperate    & 44,601  & 85.7 \\
+    Tropical     &  4,443  &  8.5 \\
+    Arid         &  3,020  &  5.8 \\
+    \midrule
+    \textbf{Total} & \textbf{52,064} & \textbf{100.0} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{ARG Filtering}\label{sec:filter}
+
+ARGs present in fewer than 5\% of samples (i.e.\ fewer than
+$0.05 \times 52{,}064 \approx 2{,}603$ samples) were removed as
+insufficiently prevalent to construct meaningful co-occurrence edges.
+This reduced the feature set from 2,999 to \textbf{156 ARGs}.
+
+\subsection{Co-occurrence Network Construction}\label{sec:network}
+
+For each climate zone, we computed all pairwise Spearman rank
+correlations between the 156 retained ARG abundance vectors.
+An undirected, weighted edge was added between ARG $i$ and ARG $j$
+if and only if:
+\begin{equation}
+  r_s(i, j) \geq 0.3 \quad \text{and} \quad p < 0.05
+  \label{eq:edge}
+\end{equation}
+where $r_s$ is the Spearman correlation coefficient and $p$ is its
+two-tailed $p$-value.
+The threshold $r \geq 0.3$ follows established practice in
+microbiome co-occurrence network studies~\cite{Faust2012} and
+excludes weakly correlated pairs that may reflect chance associations.
+Only positive correlations were retained, as negative correlations
+are ecologically ambiguous in this context (competitive exclusion
+\emph{vs.} differential habitat preference).
+Networks were implemented as weighted undirected graphs in Python
+using \texttt{NetworkX} and exported as \texttt{.gexf} files.
+
+\subsection{Community Detection}\label{sec:community}
+
+Community structure was assessed using two algorithms:
+\begin{enumerate}
+  \item \textbf{Louvain algorithm} (primary)~\cite{Blondel2008}:
+    a greedy modularity-maximisation heuristic that iteratively
+    reassigns nodes to communities to improve the modularity score
+    $Q$, defined as
+    \begin{equation}
+      Q = \frac{1}{2m} \sum_{ij}
+          \left[ A_{ij} - \frac{k_i k_j}{2m} \right]
+          \delta(c_i, c_j)
+      \label{eq:modularity}
+    \end{equation}
+    where $A_{ij}$ is the edge weight, $k_i$ is the weighted degree
+    of node $i$, $m$ is the total edge weight, $c_i$ is the community
+    assignment of node $i$, and $\delta$ is the Kronecker delta.
+    Values of $Q > 0.3$ are conventionally regarded as indicating
+    meaningful community structure~\cite{Newman2006}.
+  \item \textbf{Girvan-Newman algorithm} (comparison)~\cite{Girvan2002}:
+    a divisive hierarchical approach that removes edges with the
+    highest betweenness centrality iteratively; the first-level
+    partition was used.
+\end{enumerate}
+
+\subsection{Centrality Metrics}\label{sec:centrality}
+
+Three node-level centrality measures were computed per zone:
+\begin{enumerate}
+  \item \textbf{Degree centrality}: fraction of other nodes to which
+    a given ARG is connected.
+  \item \textbf{Betweenness centrality}: proportion of shortest paths
+    in the network that pass through a given ARG, normalised by the
+    total number of pairs.
+    Hub ARGs with high betweenness act as bridges between co-occurrence
+    communities.
+  \item \textbf{Clustering coefficient}: probability that two
+    neighbours of a given ARG are themselves connected,
+    reflecting local clustering.
+\end{enumerate}
+
+\subsection{Cross-zone Comparison}\label{sec:stats}
+
+To test whether betweenness centrality distributions differ
+significantly across climate zones, we applied the
+Kruskal-Wallis $H$-test~\cite{Kruskal1952}, a non-parametric
+one-way analysis of variance appropriate for non-normal distributions.
+Significance was set at $\alpha = 0.05$.
+
+%% ─── 3. Results ───────────────────────────────────────────────────────────────
+
+\section{Results}\label{results}
+
+\subsection{Network Topology}\label{sec:res-topology}
+
+All three climate zone networks contained 155 nodes (one ARG with
+no significant correlations was isolated in each zone and contributed
+no edges).
+Network statistics are summarised in Table~\ref{tab:netstat}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Summary topology of ARG co-occurrence networks per climate zone.}
+  \label{tab:netstat}
+  \begin{tabular}{lcccc}
+    \toprule
+    Zone      & Edges & Density & Avg.\ Clustering & Components \\
+    \midrule
+    Tropical  & 1,730 & 0.145   & 0.315            & 24 \\
+    Arid      & 2,292 & 0.192   & 0.326            & 15 \\
+    Temperate & 1,960 & 0.164   & 0.323            & 18 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The arid zone network was the most densely connected (density $= 0.192$)
+with the fewest connected components (15), suggesting a more integrated
+resistance gene ecology.
+The tropical network was the sparsest (density $= 0.145$) with the most
+components (24), consistent with a more partitioned co-occurrence
+structure.
+Network visualisations are shown in Figure~\ref{fig:networks}.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/network_tropical}
+  \includegraphics[width=\linewidth]{figures/network_arid}
+  \includegraphics[width=\linewidth]{figures/network_temperate}
+  \caption{ARG co-occurrence networks for the three climate zones.
+    Nodes are coloured by Louvain community and sized by betweenness
+    centrality.
+    Labels are shown only for the top-12 hub ARGs by betweenness.
+    Edge width is proportional to Spearman $r$.
+    \textbf{Top:} Tropical zone (1,730 edges, $Q = 0.41$).
+    \textbf{Middle:} Arid zone (2,292 edges, $Q = 0.26$).
+    \textbf{Bottom:} Temperate zone (1,960 edges, $Q = 0.31$).}
+  \label{fig:networks}
+\end{figure}
+
+\subsection{Community Detection}\label{sec:res-community}
+
+Louvain community detection results are presented in
+Table~\ref{tab:modular}.
+The tropical zone exhibited the highest modularity ($Q = 0.41$),
+indicating strongly demarcated ARG communities.
+The arid zone fell below the conventional threshold of 0.3
+($Q = 0.26$), suggesting a more integrated, less compartmentalised
+co-occurrence network.
+The temperate zone was intermediate ($Q = 0.31$).
+Girvan-Newman partitioning produced qualitatively similar community
+counts.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Community detection results per climate zone.}
+  \label{tab:modular}
+  \begin{tabular}{lccc}
+    \toprule
+    Zone      & Louvain Communities & Modularity $Q$ & GN Communities \\
+    \midrule
+    Tropical  & 27 & \textbf{0.4135} & 25 \\
+    Arid      & 20 & 0.2601          & 16 \\
+    Temperate & 24 & 0.3083          & 19 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Hub ARGs by Betweenness Centrality}\label{sec:res-hubs}
+
+Table~\ref{tab:hubs} lists the top five ARGs by betweenness centrality
+in each zone.
+\texttt{tet(M)} variants appear as primary hubs in both the tropical
+and arid zones, suggesting that this mobile tetracycline-resistance
+gene occupies a structurally central bridging role across ecologically
+distinct environments.
+In contrast, the temperate zone is dominated by \texttt{lnu(B)} and
+\texttt{aph(6)-Id}, genes conferring lincosamide and aminoglycoside
+resistance respectively, which were not among the top hubs in tropical
+or arid networks.
+\texttt{lsa(E)}, conferring streptogramin and lincosamide resistance,
+emerged as a top hub in both arid and temperate zones.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Top 5 hub ARGs by betweenness centrality per climate zone.}
+  \label{tab:hubs}
+  \begin{tabular}{llcc}
+    \toprule
+    Zone      & ARG                      & Betweenness & Degree Centr. \\
+    \midrule
+    \multirow{5}{*}{Tropical}
+      & \texttt{tet(M)\_13\_AM990992} & 0.060 & 0.299 \\
+      & \texttt{tet(Q)\_4\_Z21523}    & 0.045 & 0.325 \\
+      & \texttt{tet(M)\_12\_FR671418} & 0.044 & 0.247 \\
+      & \texttt{erm(B)\_10\_U86375}   & 0.039 & 0.143 \\
+      & \texttt{tet(O)\_3\_Y07780}    & 0.030 & 0.344 \\
+    \midrule
+    \multirow{5}{*}{Arid}
+      & \texttt{aadA2\_1\_NC\_010870}     & 0.081 & 0.182 \\
+      & \texttt{lsa(E)\_1\_JX560992}      & 0.063 & 0.240 \\
+      & \texttt{tet(M)\_13\_AM990992}     & 0.061 & 0.331 \\
+      & \texttt{lnu(A)\_1\_M14039}        & 0.056 & 0.032 \\
+      & \texttt{aph(3'')-Ib\_5\_AF321551} & 0.040 & 0.182 \\
+    \midrule
+    \multirow{5}{*}{Temperate}
+      & \texttt{lnu(B)\_2\_JQ861959}   & 0.094 & 0.273 \\
+      & \texttt{aph(6)-Id\_1\_M28829}  & 0.079 & 0.149 \\
+      & \texttt{aph(3')-Ia\_7\_X62115} & 0.054 & 0.071 \\
+      & \texttt{mef(A)\_2\_U83667}     & 0.050 & 0.214 \\
+      & \texttt{lsa(E)\_1\_JX560992}   & 0.048 & 0.305 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Cross-zone Centrality Comparison}\label{sec:res-kw}
+
+The Kruskal-Wallis test on betweenness centrality distributions
+across the three zones yielded $H = 3.219$, $p = 0.200$
+(Figure~\ref{fig:boxplot}).
+This result is not statistically significant at $\alpha = 0.05$,
+indicating that the \emph{distribution} of betweenness centrality
+values is statistically similar across zones.
+The apparent zone differences in hub ARG identity (Section~\ref{sec:res-hubs})
+therefore reflect shifts in \emph{which} ARGs occupy central positions,
+rather than a change in the overall degree of network centralisation.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figures/centrality_by_zone}
+  \caption{Distribution of betweenness centrality across climate zones.
+    Kruskal-Wallis test: $H = 3.22$, $p = 0.20$ (not significant).
+    The three zones share a similar right-skewed centrality distribution;
+    most ARGs have low betweenness while a small number serve as hubs.}
+  \label{fig:boxplot}
+\end{figure}
+
+%% ─── 4. Discussion ────────────────────────────────────────────────────────────
+
+\section{Discussion}\label{discussion}
+
+\subsection{Climate-stratified ARG network structure}
+
+All three co-occurrence networks exhibit properties consistent with
+other biological co-occurrence networks: sparse but non-trivial density,
+high clustering coefficients, and modular organisation.
+The zone-level differences in modularity are particularly informative.
+The tropical network's high modularity ($Q = 0.41$) may reflect the
+compartmentalisation of ARG co-occurrence within distinct ecological
+niches---such as soil, freshwater, and marine---each exerting different
+selective pressures on microbial communities.
+The comparatively low modularity of the arid zone ($Q = 0.26$) could
+indicate greater integration of resistance genes across sample types,
+perhaps driven by the harsher, more uniform environmental filter of
+arid climates, or by a more homogeneous microbial pool.
+
+\subsection{Hub ARG identity across zones}
+
+The recurrence of \texttt{tet(M)} as a top hub in both tropical and
+arid zones is consistent with its well-documented mobility on
+conjugative transposons (Tn916 family), which facilitate its spread
+across phylogenetically diverse bacterial hosts~\cite{Roberts2011}.
+Its structural centrality in the network suggests that it serves as a
+connector between distinct resistance clusters, which is ecologically
+consistent with its role as one of the most widely disseminated
+tetracycline-resistance determinants.
+
+The dominance of \texttt{lnu(B)} and \texttt{aph(6)-Id} in the
+temperate hub profile, genes associated with agricultural and
+clinical residues, is broadly consistent with the heavier antibiotic
+use in the temperate-zone countries (primarily North America and
+Europe) represented in the mARG dataset~\cite{vanBoeckel2014}.
+
+\texttt{lsa(E)}, a pleuromutilin-lincosamide-streptogramin resistance
+gene originally identified in \emph{Enterococcus}~\cite{Lozano2012},
+appeared as a hub in both arid and temperate zones.
+This cross-zone prevalence may reflect horizontal dissemination on
+broad-host-range plasmids independent of climate context.
+
+\subsection{Interpretation of non-significant Kruskal-Wallis result}
+
+The non-significant Kruskal-Wallis test ($p = 0.20$) should not be
+interpreted as evidence that climate zone has no effect on ARG
+network structure.
+Network-level comparison via overall centrality distribution is a
+coarse measure; it cannot capture the zone-specific shifts in hub ARG
+identity documented in Table~\ref{tab:hubs}.
+Moreover, the heavy overrepresentation of temperate samples
+(85.7\% of the zoned dataset) may have suppressed inter-zone variation
+by biasing the temperate distribution with very high statistical power
+relative to tropical and arid.
+Future work with more balanced zone sampling would provide a more
+definitive test.
+
+\subsection{Limitations}
+
+Several limitations bear noting.
+First, the dataset is heavily skewed toward temperate-zone samples;
+tropical and arid zones each contribute fewer than 10\% of the zoned
+data, which limits the statistical power of inter-zone comparisons.
+Second, the 5\% presence filter, while necessary for network
+stability, excluded 94.8\% of ARGs, potentially omitting
+zone-specific rare resistance elements.
+Third, the Spearman correlation threshold ($r \geq 0.3$) and
+$p$-value cutoff ($< 0.05$) are conventional but arbitrary; network
+topology is sensitive to these choices.
+Finally, co-occurrence does not imply physical co-localisation on
+a mobile genetic element; confounding by shared ecological niche
+cannot be excluded without confirmatory genomic evidence.
+
+%% ─── 5. Conclusion ────────────────────────────────────────────────────────────
+
+\section{Conclusion}\label{conclusion}
+
+This study presents the first large-scale, climate-stratified
+co-occurrence network analysis of environmental ARGs.
+Using the mARG dataset and K{\"o}ppen-Geiger climate zone assignment,
+we constructed weighted ARG co-occurrence networks for tropical, arid,
+and temperate zones and characterised their topology through community
+detection and centrality analysis.
+
+Key findings are: (1) all three zones exhibit non-trivial modular
+structure; (2) tropical networks are the most compartmentalised
+($Q = 0.41$), while arid networks are the most integrated
+($Q = 0.26$); (3) \texttt{tet(M)} and \texttt{lsa(E)} recur as
+structural hubs across multiple zones, consistent with their known
+mobility; and (4) overall betweenness centrality distributions are
+statistically similar across zones despite qualitative differences
+in hub ARG identity.
+
+These findings contribute to our understanding of how climate context
+shapes the ecology of antibiotic resistance at the gene-network level
+and provide a framework for future comparative resistome studies with
+more geographically balanced sampling.
+
+%% ─── Back matter ──────────────────────────────────────────────────────────────
+
+\backmatter
+
+\section*{Data and Code Availability}
+
+The mARG dataset used in this study is publicly available at Zenodo
+(accession 6919377).
+The K\"oppen-Geiger climate raster is available at Figshare
+(dataset 21789074; Beck \emph{et~al.}\ 2023).
+All analysis scripts are available in the project repository at
+\url{https://github.com/Jamesardc19/pitch2-arm-gene-network-main}.
+
+\section*{Author Contributions}
+
+J.A.R.D.C.\ designed and implemented the full analytical pipeline,
+including data preprocessing, network construction, community
+detection, centrality analysis, and visualisation.
+A.C.M.L.\ contributed to dataset sourcing and literature review for
+the Background and Methods sections.
+H.N.M.\ conducted the literature review and drafted the Introduction
+and Review of Related Literature.
+All authors contributed to the Conclusion.
+
+%% ─── Bibliography ─────────────────────────────────────────────────────────────
+
+\bibliographystyle{unsrt}%
+\bibliography{arg-bibliography}%
+
+\end{document}
