@@ -40,7 +40,6 @@ Under Climate Gradients: A Gene-Level Network Analysis}}
 \affil[1]{Department of Physical Sciences and Mathematics,
   University of the Philippines Manila,
   670 Padre Faura St, Manila 1000, Philippines}
-\affil[ ]{\textit{Corresponding author:} \href{mailto:jrdelacruz5@up.edu.ph}{jrdelacruz5@up.edu.ph}}
 
 \date{}
 \maketitle
@@ -119,6 +118,123 @@ K{\"o}ppen-Geiger raster of Beck \emph{et~al.}\ (2023), construct
 weighted co-occurrence networks for tropical, arid, and temperate
 zones, and compare their topology through community detection and
 centrality analysis.
+
+\section{Review of Related Literature}\label{rrl}
+
+\subsection{The Global Burden of Antimicrobial Resistance}
+
+Antimicrobial resistance has emerged as one of the defining public health
+crises of the twenty-first century.
+The World Health Organization classifies AMR among the top ten threats to
+global health, and surveillance data indicate that resistant infections now
+cause millions of deaths annually~\cite{WHO2023}.
+Drug-resistant pathogens complicate the treatment of common bacterial
+infections, surgical procedures, and cancer chemotherapy, eroding the
+clinical foundations of modern medicine.
+The burden is not distributed evenly: low- and middle-income countries,
+which already face constrained healthcare infrastructure, carry a
+disproportionate share of resistance-attributable mortality~\cite{LancetAMR2024}.
+
+The environmental reservoir plays a central, if underappreciated, role in
+this crisis.
+Antibiotic resistance genes are ancient and pervasive features of
+microbial genomes, predating the clinical antibiotic era by millions of
+years~\cite{Allen2010}.
+Soils, sediments, and water bodies harbour vast and diverse resistomes
+whose composition reflects both natural selective pressures and the
+accumulated legacy of antibiotic use in medicine, agriculture, and
+aquaculture.
+Environmental ARGs constitute a standing reservoir from which
+clinically relevant resistance elements can be recruited into pathogens
+through horizontal gene transfer~\cite{Partridge2018}.
+
+
+\subsection{Climate Change as a Driver of Antimicrobial Resistance}
+
+Growing evidence links climatic variables to the abundance, diversity,
+and spread of environmental ARGs.
+A systematic scoping review of the climate-AMR literature found consistent
+associations between rising temperature and increased resistance rates across
+multiple pathogen species and geographic
+settings~\cite{SalgueiroCernuda2024}.
+The biological mechanisms proposed to explain these associations include
+accelerated bacterial growth at higher temperatures, increased rates of
+horizontal gene transfer through bacterial conjugation, and heat-induced
+stress responses that upregulate efflux pumps and other resistance
+mechanisms~\cite{LancetWP2025}.
+
+Extreme weather events compound these pressures in a different way.
+Floods and heavy rainfall damage sanitation infrastructure and contaminate
+water sources, releasing ARGs from agricultural and wastewater reservoirs
+into the broader environment~\cite{LancetWP2025}.
+Droughts concentrate resistant bacteria and their genetic cargo in
+shrinking water bodies, increasing the probability of gene transfer events.
+These pathways position climate change not merely as a background driver
+of AMR but as an active amplifier of the spread and persistence of
+resistance genes across environments and hosts~\cite{Cavicchioli2019}.
+
+Despite this growing body of evidence, the relationship between climate
+and the structural organisation of ARG communities at the gene-network
+level remains largely uncharacterised.
+Most existing studies examine ARG abundance or resistance rates as scalar
+quantities, without capturing the co-occurrence relationships that reflect
+the ecological and genetic linkages among resistance determinants.
+
+
+\subsection{ARG Co-occurrence Networks in Environmental Metagenomics}
+
+Network science has emerged as a productive framework for studying
+the co-occurrence patterns of ARGs in environmental metagenomes.
+By representing ARGs as nodes and statistically significant co-occurrence
+events as edges, researchers can model the collective ecology of the
+environmental resistome, rather than examining individual genes in
+isolation.
+Early applications of this approach in diverse environments, including
+soil, freshwater, and marine sediments, established that ARG co-occurrence
+networks share structural properties with other biological networks:
+sparse but non-trivial connectivity, modular organisation into gene
+communities, and the presence of highly connected hub genes that link
+otherwise distinct clusters~\cite{ZhuChen2013}.
+
+The co-occurrence of ARGs in the same environmental sample most commonly
+reflects physical co-localisation on shared mobile genetic elements such
+as plasmids, integrons, and transposons~\cite{Partridge2018}.
+When two genes are repeatedly found together across geographically diverse
+samples, it suggests that they are co-selected and co-transferred as a
+functional unit.
+This makes co-occurrence network topology an indirect but tractable proxy
+for the genetic architecture of the resistome.
+Subsequent studies applying network analysis to global metagenomic datasets
+confirmed that co-occurrence patterns are highly context-dependent:
+ARG communities in sewage, agricultural soil, and pristine environments
+show distinct structural profiles, consistent with the influence of
+antibiotic selection pressure and microbial community composition on
+network organisation~\cite{Martiny2022}.
+
+The use of large, unified ARG abundance tables, such as the mARG dataset
+compiled by Martiny \emph{et~al.}, makes it possible to extend this
+approach to the climate gradient question.
+Analysing co-occurrence structure across samples grouped by climate zone
+allows the structural properties of the resistome network to be compared
+under systematically different environmental conditions, complementing
+and extending the scalar abundance analyses that dominate the current
+climate-AMR literature.
+
+
+\subsection{Gap in the Literature}
+
+Despite parallel advances in climate-AMR research and resistome network
+analysis, no published study has directly compared ARG co-occurrence
+network topology across major climate zones using a large, geographically
+diverse, and uniformly processed metagenomic dataset.
+Existing network studies are typically restricted to single environment
+types or single geographic regions.
+Existing climate-AMR studies focus on resistance rates rather than
+network structure.
+The present study addresses this intersection, asking not simply whether
+climate zone correlates with ARG abundance, but whether it reshapes the
+topological organisation of the resistance gene co-occurrence network.
+
 
 %% ─── 2. Methods ───────────────────────────────────────────────────────────────
 
@@ -435,37 +551,119 @@ All three co-occurrence networks exhibit properties consistent with
 other biological co-occurrence networks: sparse but non-trivial density,
 high clustering coefficients, and modular organisation.
 The zone-level differences in modularity are particularly informative.
-The tropical network's high modularity ($Q = 0.41$) may reflect the
-compartmentalisation of ARG co-occurrence within distinct ecological
-niches---such as soil, freshwater, and marine---each exerting different
-selective pressures on microbial communities.
-The comparatively low modularity of the arid zone ($Q = 0.26$) could
-indicate greater integration of resistance genes across sample types,
-perhaps driven by the harsher, more uniform environmental filter of
-arid climates, or by a more homogeneous microbial pool.
+
+The tropical network's high modularity ($Q = 0.41$) is consistent with
+the ecological complexity of tropical environments.
+Tropical climates support high microbial biodiversity, complex soil
+chemistry, and a wide range of ecological niches spanning rainforest
+soils, freshwater systems, and coastal sediments.
+This ecological heterogeneity may produce compartmentalised ARG
+communities because different microhabitats within tropical zones impose
+distinct selective pressures, favouring different sets of resistance
+determinants and mobile genetic elements~\cite{Cavicchioli2019}.
+When samples from ecologically distinct niches are pooled within a single
+climate zone, the resulting network naturally separates into communities
+corresponding to those niche-specific resistomes.
+The high modularity value observed here is thus broadly consistent with
+tropical zones harbouring a more partitioned, ecologically structured
+resistome.
+
+The comparatively low modularity of the arid zone ($Q = 0.26$, below
+the conventional 0.3 threshold) points toward a different pattern of
+ARG ecology.
+Arid environments impose a relatively uniform set of stressors:
+water limitation, high temperatures, and low organic carbon.
+These conditions may select for a more generalist microbial community
+with a correspondingly less compartmentalised set of resistance
+mechanisms~\cite{SalgueiroCernuda2024}.
+An alternative explanation is that arid-zone samples in the mARG
+dataset are dominated by a small number of environment types, such as
+desert soil and dryland agricultural sites, which would reduce
+between-niche variation and compress the network into fewer, less
+distinct communities.
+Either way, the low modularity of the arid network suggests that
+resistance genes in dry climates co-occur in a more integrated,
+less segregated fashion.
+
+The temperate zone occupies an intermediate position ($Q = 0.31$),
+reflecting the environmental diversity of the C and D climate classes,
+which span Mediterranean shrublands, continental grasslands, and
+boreal forest soils across multiple continents.
+The temperate zone is also heavily influenced by agricultural antibiotic
+use, particularly in North America and Europe, where animal husbandry
+contributes substantially to the resistance gene load in soils and
+waterways~\cite{vanBoeckel2014}.
+This anthropogenic input may reinforce certain co-occurrence edges while
+diluting the natural ecological signal, yielding the intermediate
+modularity observed.
+
 
 \subsection{Hub ARG identity across zones}
 
 The recurrence of \texttt{tet(M)} as a top hub in both tropical and
-arid zones is consistent with its well-documented mobility on
-conjugative transposons (Tn916 family), which facilitate its spread
-across phylogenetically diverse bacterial hosts~\cite{Roberts2011}.
-Its structural centrality in the network suggests that it serves as a
-connector between distinct resistance clusters, which is ecologically
-consistent with its role as one of the most widely disseminated
-tetracycline-resistance determinants.
+arid zones reflects its well-documented ecological breadth.
+\texttt{tet(M)} encodes a ribosomal protection protein that confers
+resistance to tetracyclines, one of the most widely used antibiotic
+classes in both human medicine and animal production worldwide.
+Critically, \texttt{tet(M)} is carried on conjugative transposons of
+the Tn916 family, which are capable of transfer across a wide range of
+Gram-positive and Gram-negative bacterial genera~\cite{Roberts2011}.
+This broad-host-range mobility gives \texttt{tet(M)} the ecological
+capacity to co-occur with a diverse set of other resistance genes across
+phylogenetically distant bacterial hosts, explaining its structural
+centrality in networks representing ecologically distinct environments.
+Its recurrence across both tropical and arid zones, despite the
+substantially different community compositions and modularity structures
+of those networks, underscores that certain highly mobile ARGs can
+function as network connectors irrespective of local climate conditions.
 
-The dominance of \texttt{lnu(B)} and \texttt{aph(6)-Id} in the
-temperate hub profile, genes associated with agricultural and
-clinical residues, is broadly consistent with the heavier antibiotic
-use in the temperate-zone countries (primarily North America and
-Europe) represented in the mARG dataset~\cite{vanBoeckel2014}.
+In contrast, the temperate zone hub profile is dominated by
+\texttt{lnu(B)} and \texttt{aph(6)-Id}, genes conferring resistance
+to lincosamides and aminoglycosides respectively.
+Neither gene appeared among the top five hubs in the tropical or arid
+networks.
+Lincosamide and aminoglycoside antibiotics are both extensively used in
+clinical and veterinary settings concentrated in temperate-zone countries,
+particularly across Europe and North America~\cite{vanBoeckel2014}.
+The emergence of these genes as network hubs in temperate samples is
+broadly consistent with selection pressure from heavy antibiotic use
+reinforcing co-selection and co-occurrence linkages among resistance
+determinants adapted to high-usage environments.
+This pattern suggests that the structural centralisation of specific
+ARGs in co-occurrence networks may in part reflect the regional
+antibiotic usage profile of the dominant sampling locations within
+a climate zone.
 
-\texttt{lsa(E)}, a pleuromutilin-lincosamide-streptogramin resistance
-gene originally identified in \emph{Enterococcus}~\cite{Lozano2012},
-appeared as a hub in both arid and temperate zones.
-This cross-zone prevalence may reflect horizontal dissemination on
-broad-host-range plasmids independent of climate context.
+\texttt{lsa(E)}, a gene conferring combined resistance to
+pleuromutilins, lincosamides, and streptogramins, originally
+characterised in \emph{Enterococcus} isolates~\cite{Lozano2012},
+appeared as a top hub in both arid and temperate zones.
+This cross-zone prevalence is notable because the two zones differ
+substantially in network density, modularity, and microbial community
+context.
+One plausible explanation is that \texttt{lsa(E)} resides on
+broad-host-range plasmids that facilitate its dissemination across
+phylogenetically and ecologically diverse microbial communities,
+making it a persistent co-occurrence partner for other resistance genes
+regardless of climate context.
+The clinical relevance of \texttt{lsa(E)} is increasing, as it has been
+detected in livestock-associated \emph{Staphylococcus} and
+\emph{Enterococcus} strains in multiple geographic regions, and its
+identification as a cross-zone hub in environmental samples warrants
+attention in AMR surveillance frameworks.
+
+Taken together, the zone-specific hub profiles suggest two
+coexisting processes in the environmental resistome.
+First, highly mobile genes with broad host ranges (exemplified by
+\texttt{tet(M)}) generate stable co-occurrence hubs that are
+structurally central across climatically diverse networks.
+Second, the identity of additional hubs is shaped by local conditions,
+including antibiotic use patterns and ecological niche diversity,
+producing zone-specific centrality signatures.
+This distinction has practical implications: surveillance strategies
+targeting structurally central ARGs should prioritise broadly mobile
+genes as universal targets while also monitoring for the locally
+dominant hubs that characterise each climate or geographic context.
 
 \subsection{Interpretation of non-significant Kruskal-Wallis result}
 
@@ -523,6 +721,20 @@ shapes the ecology of antibiotic resistance at the gene-network level
 and provide a framework for future comparative resistome studies with
 more geographically balanced sampling.
 
+From a public health and surveillance standpoint, the identification of
+\texttt{tet(M)} and \texttt{lsa(E)} as cross-zone structural hubs
+suggests that monitoring these genes in environmental samples may
+provide early warning signals of resistome shifts across climatically
+diverse settings.
+The zone-specific hub profiles further indicate that universal
+surveillance frameworks should be complemented by regionally tailored
+monitoring that accounts for the local antibiotic use patterns and
+ecological conditions that shape which resistance genes occupy central
+positions in the co-occurrence network.
+Future work with geographically balanced sampling and longitudinal
+datasets will be needed to determine whether the structural differences
+observed here are stable features of climate-zone resistomes or reflect
+sampling artefacts in the current mARG dataset.
 %% ─── Back matter ──────────────────────────────────────────────────────────────
 
 \section*{Data and Code Availability}
