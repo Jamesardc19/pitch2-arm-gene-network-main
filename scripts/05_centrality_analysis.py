@@ -1,42 +1,31 @@
 """
 05_centrality_analysis.py
---------------------------
-For each per-zone network:
-1. Compute degree centrality, betweenness centrality, and clustering coefficient
-2. Identify the top hub ARGs (highest betweenness)
-3. Save a centrality table per zone to outputs/networks/
-
-Output:
-    outputs/networks/centrality_<zone>.csv   ← node, degree, betweenness, clustering
-    outputs/networks/top_hubs_summary.csv    ← top 10 hub nodes per zone
+Computes degree centrality, betweenness centrality, and clustering coefficient
+for each node per zone network, then reports the top hub ARGs.
 """
 
 import networkx as nx
 import pandas as pd
 import os
 
-# ── Configuration ────────────────────────────────────────────────────────────
 NETWORKS_DIR = "outputs/networks/"
 ZONES = ["tropical", "arid", "temperate"]
-TOP_N = 10  # number of top hub nodes to report
+TOP_N = 10
 
 os.makedirs(NETWORKS_DIR, exist_ok=True)
 
 
 def compute_centrality(G: nx.Graph) -> pd.DataFrame:
-    """Compute degree, betweenness, and clustering for all nodes."""
-    degree = nx.degree_centrality(G)
+    degree      = nx.degree_centrality(G)
     betweenness = nx.betweenness_centrality(G, weight="weight", normalized=True)
-    clustering = nx.clustering(G, weight="weight")
+    clustering  = nx.clustering(G, weight="weight")
 
-    df = pd.DataFrame({
+    return pd.DataFrame({
         "node": list(degree.keys()),
-        "degree_centrality": list(degree.values()),
+        "degree_centrality":      list(degree.values()),
         "betweenness_centrality": [betweenness[n] for n in degree.keys()],
         "clustering_coefficient": [clustering[n] for n in degree.keys()],
     }).sort_values("betweenness_centrality", ascending=False)
-
-    return df
 
 
 if __name__ == "__main__":
@@ -45,8 +34,7 @@ if __name__ == "__main__":
     for zone in ZONES:
         gexf_path = os.path.join(NETWORKS_DIR, f"network_{zone}.gexf")
         if not os.path.exists(gexf_path):
-            print(f"[!] Skipping {zone} — GEXF not found: {gexf_path}")
-            print("     Run 03_build_network.py first.")
+            print(f"[!] Skipping {zone} — GEXF not found. Run 03_build_network.py first.")
             continue
 
         print(f"\nCentrality analysis: {zone.upper()}")
@@ -57,7 +45,6 @@ if __name__ == "__main__":
             continue
 
         df_centrality = compute_centrality(G)
-
         out_path = os.path.join(NETWORKS_DIR, f"centrality_{zone}.csv")
         df_centrality.to_csv(out_path, index=False)
         print(f"  Saved: {out_path}")

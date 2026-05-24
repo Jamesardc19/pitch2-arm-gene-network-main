@@ -1,18 +1,7 @@
 """
 03_build_network.py
--------------------
-For each climate zone:
-1. Load the per-zone ARG abundance table from data/processed/
-2. Compute pairwise Spearman correlation between ARGs
-3. Filter by significance (p < 0.05) and threshold (r >= 0.3)
-4. Build a weighted NetworkX graph
-5. Export as .gexf for Gephi and save graph stats
-
-Output:
-    outputs/networks/network_tropical.gexf
-    outputs/networks/network_arid.gexf
-    outputs/networks/network_temperate.gexf
-    outputs/networks/network_stats.csv
+Builds a weighted ARG co-occurrence network per climate zone from pairwise
+Spearman correlations, then exports each as a .gexf file.
 """
 
 import pandas as pd
@@ -21,35 +10,27 @@ import networkx as nx
 from scipy.stats import spearmanr
 import os
 
-# ── Configuration ────────────────────────────────────────────────────────────
-PROCESSED_DIR = "data/processed/"
-NETWORKS_DIR = "outputs/networks/"
-CORRELATION_THRESHOLD = 0.3   # minimum r to keep an edge
-P_VALUE_THRESHOLD = 0.05      # maximum p-value to keep an edge
-ZONES = ["tropical", "arid", "temperate"]
+PROCESSED_DIR        = "data/processed/"
+NETWORKS_DIR         = "outputs/networks/"
+CORRELATION_THRESHOLD = 0.3
+P_VALUE_THRESHOLD     = 0.05
+ZONES                 = ["tropical", "arid", "temperate"]
 
-# Columns that are metadata (not ARGs) — update to match your dataset
+# Columns that are metadata, not ARG abundances
 META_COLS = ["Latitude", "Longitude", "KG_code", "Climate_Zone", "SampleID"]
 
 os.makedirs(NETWORKS_DIR, exist_ok=True)
 
 
 def get_arg_columns(df: pd.DataFrame) -> list:
-    """Return only the ARG abundance columns (strip metadata columns)."""
     return [c for c in df.columns if c not in META_COLS]
 
 
 def build_cooccurrence_matrix(df_zone: pd.DataFrame) -> pd.DataFrame:
-    """
-    Compute pairwise Spearman correlations between ARG columns.
-    Only keeps significant (p < P_VALUE_THRESHOLD) positive correlations.
-    """
     arg_cols = get_arg_columns(df_zone)
-    df_args = df_zone[arg_cols]
+    df_args  = df_zone[arg_cols]
     n = len(arg_cols)
-    corr_matrix = pd.DataFrame(
-        np.zeros((n, n)), index=arg_cols, columns=arg_cols
-    )
+    corr_matrix = pd.DataFrame(np.zeros((n, n)), index=arg_cols, columns=arg_cols)
 
     for i in range(n):
         for j in range(i + 1, n):
@@ -62,7 +43,6 @@ def build_cooccurrence_matrix(df_zone: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_network(corr_matrix: pd.DataFrame, threshold: float = CORRELATION_THRESHOLD) -> nx.Graph:
-    """Build a weighted undirected graph from a correlation matrix."""
     G = nx.Graph()
     args = corr_matrix.index.tolist()
     G.add_nodes_from(args)
